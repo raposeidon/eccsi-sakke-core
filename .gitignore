@@ -1,0 +1,102 @@
+# common
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+*.swp
+*.swo
+*.bak
+*.old
+*.orig
+*.rej
+
+# Build and deployment artifacts
+/build/
+/bin/
+/out/
+/dist/
+/obj/
+/Debug/
+/Release/
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.o
+*.obj
+*.apk
+*.ipa
+
+# Android
+.gradle/
+local.properties
+/.idea/
+/*.iml
+/app/build/
+/captures/
+/.cxx/
+*.keystore
+*.jks
+
+# iOS
+*.xcuserstate
+*.xcworkspace
+*.xcuserdata
+DerivedData/
+Pods/
+Carthage/
+build/
+/*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcscmblueprint
+*.moved-aside
+*.ipa
+
+# Visual Studio (MSVC)
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+ipch/
+.vs/
+Debug/
+Release/
+[Bb]in/
+[Oo]bj/
+*.pdb
+*.idb
+*.opendb
+*.tlog
+
+# MinGW
+*.exe
+*.dll
+*.o
+*.a
+*.gch
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.dir
+
+# etc.
+*.lock
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Test & Coverage
+*.gcno
+*.gcda
+*.gcov
+coverage/

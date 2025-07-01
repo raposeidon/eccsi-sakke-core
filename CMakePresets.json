@@ -1,0 +1,163 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 19, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base-msvc",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "hidden": true
+    },
+    {
+      "name": "windows-msvc-debug",
+      "inherits": "base-msvc",
+      "displayName": "Windows - MSVC 2022 x64 Debug",
+      "binaryDir": "${sourceDir}/build/msvc/debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "windows-msvc-release",
+      "inherits": "base-msvc",
+      "displayName": "Windows - MSVC 2022 x64 Release",
+      "binaryDir": "${sourceDir}/build/msvc/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "base-mingw",
+      "generator": "MinGW Makefiles",
+      "hidden": true
+    },
+    {
+      "name": "windows-mingw-debug",
+      "inherits": "base-mingw",
+      "displayName": "Windows - MinGW Debug",
+      "binaryDir": "${sourceDir}/build/mingw/debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "windows-mingw-release",
+      "inherits": "base-mingw",
+      "displayName": "Windows - MinGW Release",
+      "binaryDir": "${sourceDir}/build/mingw/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "base-linux-gcc",
+      "generator": "Ninja",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "inherits": "base-linux-gcc",
+      "displayName": "Linux - GCC Debug",
+      "binaryDir": "${sourceDir}/build/linux/gcc/debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "linux-gcc-release",
+      "inherits": "base-linux-gcc",
+      "displayName": "Linux - GCC Release",
+      "binaryDir": "${sourceDir}/build/linux/gcc/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "base-android-arm64",
+      "generator": "Ninja",
+      "toolchainFile": "$ENV{ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake",
+      "hidden": true
+    },
+    {
+      "name": "android-arm64-debug",
+      "inherits": "base-android-arm64",
+      "displayName": "Android - arm64-v8a Debug",
+      "binaryDir": "${sourceDir}/build/android/arm64/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ANDROID_ABI": "arm64-v8a",
+        "ANDROID_PLATFORM": "android-24"
+      }
+    },
+    {
+      "name": "android-arm64-release",
+      "inherits": "base-android-arm64",
+      "displayName": "Android - arm64-v8a Release",
+      "binaryDir": "${sourceDir}/build/android/arm64/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ANDROID_ABI": "arm64-v8a",
+        "ANDROID_PLATFORM": "android-24"
+      }
+    },
+    {
+      "name": "base-ios-arm64",
+      "generator": "Xcode",
+      "architecture": "arm64",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0"
+      }
+    },
+    {
+      "name": "ios-arm64-debug",
+      "inherits": "base-ios-arm64",
+      "displayName": "iOS - arm64 Debug",
+      "binaryDir": "${sourceDir}/build/ios/arm64/debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "ios-arm64-release",
+      "inherits": "base-ios-arm64",
+      "displayName": "iOS - arm64 Release",
+      "binaryDir": "${sourceDir}/build/ios/arm64/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "default",
+      "inherits": "windows-msvc-debug",
+      "displayName": "Default (Windows - MSVC 2022 x64 Debug)"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-msvc-debug-build",
+      "configurePreset": "windows-msvc-debug"
+    },
+    {
+      "name": "windows-msvc-release-build",
+      "configurePreset": "windows-msvc-release"
+    },
+    {
+      "name": "windows-mingw-debug-build",
+      "configurePreset": "windows-mingw-debug"
+    },
+    {
+      "name": "windows-mingw-release-build",
+      "configurePreset": "windows-mingw-release"
+    },
+    { "name": "linux-gcc-debug-build", "configurePreset": "linux-gcc-debug" },
+    {
+      "name": "linux-gcc-release-build",
+      "configurePreset": "linux-gcc-release"
+    },
+    {
+      "name": "android-arm64-debug-build",
+      "configurePreset": "android-arm64-debug"
+    },
+    {
+      "name": "android-arm64-release-build",
+      "configurePreset": "android-arm64-release"
+    },
+    { "name": "ios-arm64-debug-build", "configurePreset": "ios-arm64-debug" },
+    {
+      "name": "ios-arm64-release-build",
+      "configurePreset": "ios-arm64-release"
+    },
+    { "name": "default-build", "configurePreset": "default" }
+  ]
+}
