@@ -1,15 +1,20 @@
 Copyright 2025 The raposeidon Project Authors
 (https://github.com/raposeidon/eccsi-sakke-core)
 
-Licensed under the Apache License, Version 2.0 (the "License");
+This project is licensed under the Apache License, Version 2.0 (the "License").
 You may obtain a copy of the License at:
 http://www.apache.org/licenses/LICENSE-2.0
 
-This product incorporates material from:
-- RFC 6507, RFC 6508, RFC 6509 (IETF Standards)
+This software incorporates external materials and implementation ideas from the following sources:
+- RFC 6507, RFC 6508, RFC 6509 (IETF standards)
+- The ECCSI-SAKKE project (https://github.com/jim-b/ECCSI-SAKKE), specifically the sakke/tlpairing logic
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+This project re-implements the sakke/tlpairing logic from the ECCSI-SAKKE repository in C++.
+The original algorithms and logic structure were referenced and adapted in compliance with the Apache License 2.0.
+
+The original source code copyright and license are held by the ECCSI-SAKKE repository (https://github.com/jim-b/ECCSI-SAKKE).
+For further details, please refer to the LICENSE file and any third-party license notices (e.g., THIRD_PARTY_NOTICES) in this repository.
+
+Unless required by applicable law or agreed to in writing, this software is provided "as is,"
+without warranties or conditions of any kind, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
