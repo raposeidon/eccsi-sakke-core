@@ -12,7 +12,8 @@
 #define LOG_MODULE "ECCSI"
 #include "eccsi/eccsi.h"
 #include "utils/LoggerMacro.h"
-#include <openssl/sha.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 #include <cstring>
 
 namespace eccsi_sakke::eccsi {
@@ -35,17 +36,34 @@ eccsi_sakke::utils::OctetString ECCSI::computeHS(
     const eccsi_sakke::utils::OctetString &userId,
     const eccsi_sakke::utils::OctetString &PVT)
 {
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx)
+    {
+        LOG_ERROR("EVP_MD_CTX_new failed in computeHS");
+        return {};
+    }
 
-    SHA256_CTX sha_ctx;
-    SHA256_Init(&sha_ctx);
-    SHA256_Update(&sha_ctx, G.bytes().data(), G.size());
-    SHA256_Update(&sha_ctx, KPAK.bytes().data(), KPAK.size());
-    SHA256_Update(&sha_ctx, userId.bytes().data(), userId.size());
-    SHA256_Update(&sha_ctx, PVT.bytes().data(), PVT.size());
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hash_len = 0;
 
-    uint8_t hash[SHA256_DIGEST_LENGTH];
-    SHA256_Final(hash, &sha_ctx);
-    return eccsi_sakke::utils::OctetString(std::vector<uint8_t>(hash, hash + sizeof(hash)));
+    int ok = 1;
+    ok &= EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr);
+    ok &= EVP_DigestUpdate(mdctx, G.bytes().data(), G.size());
+    ok &= EVP_DigestUpdate(mdctx, KPAK.bytes().data(), KPAK.size());
+    ok &= EVP_DigestUpdate(mdctx, userId.bytes().data(), userId.size());
+    ok &= EVP_DigestUpdate(mdctx, PVT.bytes().data(), PVT.size());
+
+    if (!ok || EVP_DigestFinal_ex(mdctx, hash, &hash_len) != 1)
+    {
+        LOG_ERROR("EVP_Digest operation failed in computeHS");
+        EVP_MD_CTX_free(mdctx);
+        return {};
+    }
+
+    EVP_MD_CTX_free(mdctx);
+
+    return eccsi_sakke::utils::OctetString(
+        std::vector<uint8_t>(hash, hash + hash_len));
 }
 
 eccsi_sakke::utils::OctetString ECCSI::computeHE(
@@ -53,16 +71,33 @@ eccsi_sakke::utils::OctetString ECCSI::computeHE(
     const eccsi_sakke::utils::OctetString &r,
     const eccsi_sakke::utils::OctetString &message)
 {
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx)
+    {
+        LOG_ERROR("EVP_MD_CTX_new failed in computeHE");
+        return {};
+    }
 
-    SHA256_CTX sha_ctx;
-    SHA256_Init(&sha_ctx);
-    SHA256_Update(&sha_ctx, HS.bytes().data(), HS.size());
-    SHA256_Update(&sha_ctx, r.bytes().data(), r.size());
-    SHA256_Update(&sha_ctx, message.bytes().data(), message.size());
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hash_len = 0;
 
-    uint8_t hash[SHA256_DIGEST_LENGTH];
-    SHA256_Final(hash, &sha_ctx);
-    return eccsi_sakke::utils::OctetString(std::vector<uint8_t>(hash, hash + sizeof(hash)));
+    int ok = 1;
+    ok &= EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr);
+    ok &= EVP_DigestUpdate(mdctx, HS.bytes().data(), HS.size());
+    ok &= EVP_DigestUpdate(mdctx, r.bytes().data(), r.size());
+    ok &= EVP_DigestUpdate(mdctx, message.bytes().data(), message.size());
+
+    if (!ok || EVP_DigestFinal_ex(mdctx, hash, &hash_len) != 1)
+    {
+        LOG_ERROR("EVP_Digest operation failed in computeHE");
+        EVP_MD_CTX_free(mdctx);
+        return {};
+    }
+
+    EVP_MD_CTX_free(mdctx);
+
+    return eccsi_sakke::utils::OctetString(
+        std::vector<uint8_t>(hash, hash + hash_len));
 }
 
 bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
@@ -115,15 +150,36 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
     }
     else
     {
+        const int order_bits  = BN_num_bits(q.get());
+        const int order_bytes = (order_bits + 7) / 8;
+        std::vector<unsigned char> buf(static_cast<size_t>(order_bytes));
+
+        int ok = 1;
         do
         {
-            if (!BN_rand_range(j.get(), q.get()))
+            if (RAND_bytes(buf.data(), order_bytes) != 1)
             {
-                LOG_ERROR("BN_rand_range failed");
+                LOG_ERROR("RAND_bytes failed when generating j");
                 return false;
             }
-        } while (BN_is_zero(j.get()));
+
+            if (!BN_bin2bn(buf.data(), order_bytes, j.get()))
+            {
+                LOG_ERROR("BN_bin2bn failed when generating j");
+                return false;
+            }
+
+            // j = j mod q
+            if (!BN_mod(j.get(), j.get(), q.get(), ctx.get()))
+            {
+                LOG_ERROR("BN_mod failed when reducing j modulo q");
+                return false;
+            }
+
+            ok = !BN_is_zero(j.get());
+        } while (!ok);
     }
+
     // (Step 2) Compute J = [j]G and set r = Jx
     EC_POINT_ptr J(EC_POINT_new(getGroup()), EC_POINT_free);
     if (!J || !EC_POINT_mul(getGroup(), J.get(), nullptr, getGeneratorPoint(), j.get(), ctx.get()))
