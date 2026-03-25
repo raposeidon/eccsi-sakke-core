@@ -476,11 +476,19 @@ namespace eccsi_sakke::sakke
 
         // 3. R_(b,S)
         EC_POINT_ptr R_bS(EC_POINT_new(group), EC_POINT_free);
-        EC_POINTs_mul(group, R_bS.get(), nullptr, 2, points, scalars, ctx.get());
+        if (!EC_POINTs_mul(group, R_bS.get(), nullptr, 2, points, scalars, ctx.get()))
+        {
+            LOG_ERROR("generateSakke EC_POINTs_mul failed for R_(b,S)");
+            return false;
+        }
 
         // 4. R_bs coordinates(x, y)
         BN_ptr Rbx(BN_new(), BN_free), Rby(BN_new(), BN_free);
-        EC_POINT_get_affine_coordinates_GFp(group, R_bS.get(), Rbx.get(), Rby.get(), ctx.get());
+        if (!EC_POINT_get_affine_coordinates_GFp(group, R_bS.get(), Rbx.get(), Rby.get(), ctx.get()))
+        {
+            LOG_ERROR("generateSakke EC_POINT_get_affine_coordinates failed for R_(b,S)");
+            return false;
+        }
 
         char *rx_hex = BN_bn2hex(Rbx.get());
         if (!rx_hex)
@@ -830,17 +838,33 @@ namespace eccsi_sakke::sakke
             return false;
 
         EC_POINT_ptr bP(EC_POINT_new(group), EC_POINT_free);
-        EC_POINT_mul(group, bP.get(), nullptr, P, b.get(), ctx.get());
+        if (!EC_POINT_mul(group, bP.get(), nullptr, P, b.get(), ctx.get()))
+        {
+            LOG_ERROR("extractsakke EC_POINT_mul failed for [b]P");
+            return false;
+        }
 
         EC_POINT_ptr Q(EC_POINT_new(group), EC_POINT_free);
-        EC_POINT_add(group, Q.get(), bP.get(), Z_pt.get(), ctx.get());
+        if (!EC_POINT_add(group, Q.get(), bP.get(), Z_pt.get(), ctx.get()))
+        {
+            LOG_ERROR("extractsakke EC_POINT_add failed for [b]P + Z_S");
+            return false;
+        }
 
         EC_POINT_ptr R_check(EC_POINT_new(group), EC_POINT_free);
-        EC_POINT_mul(group, R_check.get(), nullptr, Q.get(), r.get(), ctx.get());
+        if (!EC_POINT_mul(group, R_check.get(), nullptr, Q.get(), r.get(), ctx.get()))
+        {
+            LOG_ERROR("extractsakke EC_POINT_mul failed for TEST");
+            return false;
+        }
 
         // (R_bS의 x, y)
         BN_ptr Testx(BN_new(), BN_free), Testy(BN_new(), BN_free);
-        EC_POINT_get_affine_coordinates_GFp(group, R_check.get(), Testx.get(), Testy.get(), ctx.get());
+        if (!EC_POINT_get_affine_coordinates_GFp(group, R_check.get(), Testx.get(), Testy.get(), ctx.get()))
+        {
+            LOG_ERROR("extractsakke EC_POINT_get_affine_coordinates failed for TEST");
+            return false;
+        }
         char *Testx_hex = BN_bn2hex(Testx.get());
         if (!Testx_hex)
             throw std::runtime_error("BN_bn2hex failed");
