@@ -541,14 +541,14 @@ namespace eccsi_sakke::sakke
         if (g_pow_r_len == 0)
         {
             LOG_ERROR("generateSakke g_pow_r_len is 0!");
-            return true;
+            return false;
         }
         std::vector<uint8_t> g_pow_r_bytes(g_pow_r_len);
         // Export g^r to a byte array
         if (!BN_bn2bin(g_pow_r.get(), g_pow_r_bytes.data()))
         {
             LOG_ERROR("generateSakke g_pow_r incorrect length!");
-            return true;
+            return false;
         }
 
         // Generate the mask value: mask = HashToIntegerRange(g^r, 2^n, SHA-256)
