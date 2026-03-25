@@ -4,7 +4,7 @@
 */
 
 #pragma once
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <openssl/bn.h>
 #include <vector>
 #include <iostream>
@@ -39,9 +39,9 @@ public:
      */
     static size_t hashLength(HashType type) {
         switch (type) {
-            case SHA256: return SHA256_DIGEST_LENGTH;
-            case SHA384: return SHA384_DIGEST_LENGTH;
-            case SHA512: return SHA512_DIGEST_LENGTH;
+            case SHA256: return 32;
+            case SHA384: return 48;
+            case SHA512: return 64;
             default: throw std::invalid_argument("Unsupported hash type");
         }
     }
@@ -124,57 +124,28 @@ public:
 
 private:
     /**
-     * @brief Computes hash of input using specified HashType.
+     * @brief Computes hash of input using specified HashType via EVP_Digest.
      * @param[out] output    Output vector (digest)
      * @param[in]  input     Input data
      * @param[in]  hash_type Hash algorithm
      * @return True on success, false on failure.
      */
     static bool hash(
-        std::vector<unsigned char>& output, 
-        const std::vector<unsigned char>& input, 
+        std::vector<unsigned char>& output,
+        const std::vector<unsigned char>& input,
         HashType hash_type)
     {
+        const EVP_MD* md = nullptr;
         switch (hash_type) {
-            case SHA256: return hash_sha256(output, input);
-            case SHA384: return hash_sha384(output, input);
-            case SHA512: return hash_sha512(output, input);
+            case SHA256: md = EVP_sha256(); break;
+            case SHA384: md = EVP_sha384(); break;
+            case SHA512: md = EVP_sha512(); break;
             default: return false;
         }
-    }
-
-    /**
-     * @brief SHA-256 hash function.
-     */    
-    static bool hash_sha256(std::vector<unsigned char>& output, const std::vector<unsigned char>& input) {
-        output.resize(SHA256_DIGEST_LENGTH);
-        SHA256_CTX ctx;
-        return SHA256_Init(&ctx) == 1 &&
-               SHA256_Update(&ctx, input.data(), input.size()) == 1 &&
-               SHA256_Final(output.data(), &ctx) == 1;
-    }
-
-    /**
-     * @brief SHA-384 hash function.
-     */
-    static bool hash_sha384(std::vector<unsigned char>& output, const std::vector<unsigned char>& input) {
-        output.resize(SHA384_DIGEST_LENGTH);
-        SHA512_CTX ctx;
-        return SHA384_Init(&ctx) == 1 &&
-               SHA384_Update(&ctx, input.data(), input.size()) == 1 &&
-               SHA384_Final(output.data(), &ctx) == 1;
-    }
-
-
-    /**
-     * @brief SHA-512 hash function.
-     */    
-    static bool hash_sha512(std::vector<unsigned char>& output, const std::vector<unsigned char>& input) {
-        output.resize(SHA512_DIGEST_LENGTH);
-        SHA512_CTX ctx;
-        return SHA512_Init(&ctx) == 1 &&
-               SHA512_Update(&ctx, input.data(), input.size()) == 1 &&
-               SHA512_Final(output.data(), &ctx) == 1;
+        output.resize(hashLength(hash_type));
+        unsigned int digest_len = 0;
+        return EVP_Digest(input.data(), input.size(),
+                          output.data(), &digest_len, md, nullptr) == 1;
     }
 };
 
