@@ -14,22 +14,24 @@
 #include <cstdint>
 #include <stdexcept>
 #include <iostream>
+#include <mutex>
 
 namespace eccsi_sakke::utils {
 
-std::vector<uint8_t> generateRandomR(size_t num_bytes) {
-    static bool fips_available = false;
-    static bool fips_checked = false;
-    static OSSL_PROVIDER* fips_provider = nullptr;
-    static OSSL_PROVIDER* def_provider = nullptr;
+static std::once_flag fips_init_flag;
+static bool fips_available = false;
+static OSSL_PROVIDER* fips_provider = nullptr;
+static OSSL_PROVIDER* def_provider = nullptr;
 
-    // 1. FIPS mode check and provider loading (performed once per process)
-    if (!fips_checked) {
-        fips_provider = OSSL_PROVIDER_load(NULL, "fips");
-        def_provider = OSSL_PROVIDER_load(NULL, "default");
-        fips_available = (fips_provider != nullptr);
-        fips_checked = true;
-    }
+static void initFipsProvider() {
+    fips_provider = OSSL_PROVIDER_load(NULL, "fips");
+    def_provider = OSSL_PROVIDER_load(NULL, "default");
+    fips_available = (fips_provider != nullptr);
+}
+
+std::vector<uint8_t> generateRandomR(size_t num_bytes) {
+    // 1. FIPS mode check and provider loading (performed once per process, thread-safe)
+    std::call_once(fips_init_flag, initFipsProvider);
 
     std::vector<uint8_t> result(num_bytes);
 
