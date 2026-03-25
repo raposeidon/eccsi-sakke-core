@@ -50,12 +50,16 @@ std::pair<EC_GROUP*, EC_POINT*> SakkeGroupManager::createGroup(const eccsi_sakke
     !BN_hex2bn(&Gx, param.Px.c_str())||
     !BN_hex2bn(&Gy, param.Py.c_str())) {
         LOG_ERROR("Failed to convert parameter string to BIGNUM");
+        BN_free(p); BN_free(a); BN_free(b);
+        BN_free(Gx); BN_free(Gy);
         return {nullptr, nullptr};
     }
 
     EC_GROUP* group = EC_GROUP_new_curve_GFp(p, a, b, nullptr);
     if (!group){
         LOG_ERROR("Failed to create EC_GROUP");
+        BN_free(p); BN_free(a); BN_free(b);
+        BN_free(Gx); BN_free(Gy);
         return {nullptr, nullptr};
     }
     
