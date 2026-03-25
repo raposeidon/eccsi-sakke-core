@@ -28,9 +28,8 @@ namespace eccsi_sakke::utils {
  * @note
  *   - Used for all raw binary values, cryptographic keys, and protocol parameters.
  *   - Designed to avoid dependencies on external cryptographic libraries for maximal portability.
- *   - **Secure wipe (zeroization) is NOT performed automatically on destruction.**
- *     - Users MUST explicitly wipe sensitive contents (e.g., via std::fill or a custom wipe function)
- *       before releasing or reusing OctetString objects that hold secret material.
+ *   - **Secure wipe (zeroization) IS performed automatically on destruction.**
+ *     - The destructor uses a volatile-based wipe to zero the internal buffer.
  *   - The class is lightweight and safe for use as a return type or value object.
  *   - Intended for use wherever safe, flexible binary data handling is required.
  */
@@ -41,6 +40,11 @@ public:
      * @brief Default constructor. Constructs an empty OctetString.
      */
     OctetString();
+
+    /**
+     * @brief Destructor. Securely wipes the internal data before deallocation.
+     */
+    ~OctetString();
 
     /**
      * @brief Copy constructor.

@@ -12,13 +12,38 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cctype>
-#include <openssl/crypto.h>
+
 namespace eccsi_sakke::utils {
+
+/**
+ * @brief Secure memory wipe that resists compiler dead-store elimination.
+ *
+ * Writes through a volatile pointer, preventing the compiler from
+ * optimizing away the zeroing of sensitive data.
+ */
+static void secureClear(void *ptr, size_t len)
+{
+    if (ptr && len > 0)
+    {
+        volatile unsigned char *p = static_cast<volatile unsigned char *>(ptr);
+        for (size_t i = 0; i < len; ++i)
+            p[i] = 0;
+    }
+}
 
 /**
  * @brief Default constructor. Constructs an empty OctetString.
  */
 OctetString::OctetString() = default;
+
+/**
+ * @brief Destructor. Securely wipes the internal data.
+ */
+OctetString::~OctetString()
+{
+    if (!data.empty())
+        secureClear(data.data(), data.size());
+}
 
 /**
  * @brief Construct from a byte vector.
