@@ -415,7 +415,9 @@ namespace eccsi_sakke::sakke
         if (ssv.size() == 0)
             ssv = OctetString(utils::generateRandomR(param.n_bits / 8));
 
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         LOG_DEBUG("generateSakke ssv: ", ssv.toHexString());
+#endif
 
         /********************************************************************
          step 2) Compute r = HashToIntegerRange( SSV || b, q, Hash );
@@ -423,7 +425,9 @@ namespace eccsi_sakke::sakke
         OctetString r_input(ssv);
         r_input.append(recipientId);
 
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         LOG_DEBUG("generateSakke ssv|b: ", r_input.toHexString());
+#endif
 
         BIGNUM *raw_r = BN_new();
         if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_r, r_input.bytes().data(), r_input.bytes().size(), q.get(), SHAHash::SHA256))
@@ -433,11 +437,13 @@ namespace eccsi_sakke::sakke
         }
         BN_ptr r(raw_r, BN_free);
 
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *r_hex = BN_bn2hex(r.get());
         if (!r_hex)
             throw std::runtime_error("BN_bn2hex failed");
         LOG_DEBUG("generateSakke r:  ", r_hex);
         OPENSSL_free(r_hex);
+#endif
 
         /********************************************************************
          step 3) Compute R_(b,S) = [r]([b]P + Z_S) in E(F_p);
@@ -562,12 +568,13 @@ namespace eccsi_sakke::sakke
         }
         BN_ptr mask(raw_mask, BN_free);
 
-        // For debugging: output mask in hex format
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *mask_hex = BN_bn2hex(mask.get());
         if (!mask_hex)
             throw std::runtime_error("BN_bn2hex failed");
         LOG_DEBUG("generateSakke mask: ", mask_hex);
         OPENSSL_free(mask_hex);
+#endif
 
         // Convert the SSV (shared secret value) to BIGNUM for XOR operation
         BN_ptr H(BN_new(), BN_free);
@@ -589,12 +596,13 @@ namespace eccsi_sakke::sakke
             }
         }
 
-        // For debugging: output mask in hex format
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *H_hex = BN_bn2hex(H.get());
         if (!H_hex)
             throw std::runtime_error("BN_bn2hex failed");
         LOG_DEBUG("generateSakke H: ", H_hex);
         OPENSSL_free(H_hex);
+#endif
 
         /********************************************************************
          Step 5) Form the Encapsulated Data ( R_(b,S), H ),
@@ -760,11 +768,13 @@ namespace eccsi_sakke::sakke
         }
         BN_ptr mask(raw_mask, BN_free);
 
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *mask_hex = BN_bn2hex(mask.get());
         if (!mask_hex)
             throw std::runtime_error("BN_bn2hex failed");
         LOG_DEBUG("extractsakke mask :  ", mask_hex);
         OPENSSL_free(mask_hex);
+#endif
 
         std::vector<uint8_t> mask_vec(Rb_octet_count, 0x00);
         std::vector<uint8_t> H_vec(Rb_octet_count, 0x00);
@@ -779,7 +789,9 @@ namespace eccsi_sakke::sakke
         for (size_t i = 0; i < Rb_octet_count; ++i)
             H_vec[i] ^= mask_vec[i];
         OctetString ssv(H_vec);
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         LOG_DEBUG("extractsakke SSV result: ", ssv.toHexString());
+#endif
 
         /********************************************************************
          Step 4) Compute r = HashToIntegerRange( SSV || b, q, Hash );
@@ -788,7 +800,9 @@ namespace eccsi_sakke::sakke
         BN_bin2bn(recipientId.bytes().data(), recipientId.bytes().size(), b.get());
         OctetString ssv_with_id(ssv);
         ssv_with_id.append(recipientId);
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         LOG_DEBUG("extractsakke ssv_with_id: ", ssv_with_id.toHexString());
+#endif
 
         BIGNUM *raw_r = BN_new();
         if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_r, ssv_with_id.bytes().data(), ssv_with_id.bytes().size(), q.get(), SHAHash::SHA256))
@@ -798,11 +812,13 @@ namespace eccsi_sakke::sakke
         }
         BN_ptr r(raw_r, BN_free);
 
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *r_hex = BN_bn2hex(r.get());
         if (!r_hex)
             throw std::runtime_error("BN_bn2hex failed");
         LOG_DEBUG("extractsakke r :  ", r_hex);
         OPENSSL_free(r_hex);
+#endif
 
         /********************************************************************
          Step 5) Compute TEST = [r]([b]P + Z_S) in E(F_p).

@@ -206,7 +206,9 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
     LOG_DEBUG("sign J: 04", Jx_hex, Jy_hex);
     OPENSSL_free(Jx_hex);
     OPENSSL_free(Jy_hex);
+#ifdef ECCSI_SAKKE_DEBUG_SECRETS
     LOG_DEBUG("sign r: ", r.toHexString());
+#endif
 
     // (Step 3) Compute HS = hash(G || KPAK || userId || PVT)
     std::vector<uint8_t> g_buf(65);
