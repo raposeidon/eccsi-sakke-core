@@ -766,13 +766,12 @@ namespace eccsi_sakke::sakke
         BN_ptr twoToN(BN_new(), BN_free);
         BN_set_bit(twoToN.get(), param.n_bits);
 
-        BIGNUM *raw_mask = BN_new();
-        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_mask, w_bytes.data(), w_bytes.size(), twoToN.get(), SHAHash::SHA256))
+        BN_ptr mask(BN_new(), BN_free);
+        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(mask.get(), w_bytes.data(), w_bytes.size(), twoToN.get(), SHAHash::SHA256))
         {
             LOG_ERROR("extractsakke Failed to generate b");
             return false;
         }
-        BN_ptr mask(raw_mask, BN_free);
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *mask_hex = BN_bn2hex(mask.get());
@@ -810,13 +809,12 @@ namespace eccsi_sakke::sakke
         LOG_DEBUG("extractsakke ssv_with_id: ", ssv_with_id.toHexString());
 #endif
 
-        BIGNUM *raw_r = BN_new();
-        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_r, ssv_with_id.bytes().data(), ssv_with_id.bytes().size(), q.get(), SHAHash::SHA256))
+        BN_ptr r(BN_new(), BN_free);
+        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(r.get(), ssv_with_id.bytes().data(), ssv_with_id.bytes().size(), q.get(), SHAHash::SHA256))
         {
             LOG_ERROR("extractsakke Failed to generate b");
             return false;
         }
-        BN_ptr r(raw_r, BN_free);
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *r_hex = BN_bn2hex(r.get());
