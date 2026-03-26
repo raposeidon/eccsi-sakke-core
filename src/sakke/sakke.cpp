@@ -398,11 +398,16 @@ namespace eccsi_sakke::sakke
 
         // Parameters
         BIGNUM *raw_p = nullptr;
-        BN_hex2bn(&raw_p, param.p.c_str());
         BIGNUM *raw_q = nullptr;
-        BN_hex2bn(&raw_q, param.q.c_str());
         BIGNUM *raw_g = nullptr;
-        BN_hex2bn(&raw_g, param.g.c_str());
+        if (!BN_hex2bn(&raw_p, param.p.c_str()) ||
+            !BN_hex2bn(&raw_q, param.q.c_str()) ||
+            !BN_hex2bn(&raw_g, param.g.c_str()))
+        {
+            LOG_ERROR("Failed to parse SAKKE parameters from hex");
+            BN_free(raw_p); BN_free(raw_q); BN_free(raw_g);
+            return false;
+        }
         BN_ptr p(raw_p, BN_free), q(raw_q, BN_free), g(raw_g, BN_free);
 
         /********************************************************************
@@ -686,9 +691,14 @@ namespace eccsi_sakke::sakke
 
         // Load SAKKE parameters
         BIGNUM *raw_p = nullptr;
-        BN_hex2bn(&raw_p, param.p.c_str());
         BIGNUM *raw_q = nullptr;
-        BN_hex2bn(&raw_q, param.q.c_str());
+        if (!BN_hex2bn(&raw_p, param.p.c_str()) ||
+            !BN_hex2bn(&raw_q, param.q.c_str()))
+        {
+            LOG_ERROR("Failed to parse SAKKE parameters from hex");
+            BN_free(raw_p); BN_free(raw_q);
+            return false;
+        }
         BN_ptr p(raw_p, BN_free), q(raw_q, BN_free);
 
         /********************************************************************
@@ -950,9 +960,16 @@ namespace eccsi_sakke::sakke
         }
 
         // 6. Compute pairing < [a]P + Z, K_(a,T) >
-        BIGNUM* p_raw = nullptr;BN_hex2bn(&p_raw, param.p.c_str());
-        BIGNUM* q_raw = nullptr; BN_hex2bn(&q_raw, param.q.c_str());
-		BN_ptr p_bn(p_raw, BN_free);
+        BIGNUM* p_raw = nullptr;
+        BIGNUM* q_raw = nullptr;
+        if (!BN_hex2bn(&p_raw, param.p.c_str()) ||
+            !BN_hex2bn(&q_raw, param.q.c_str()))
+        {
+            LOG_ERROR("validateRSK: Failed to parse p/q from hex");
+            BN_free(p_raw); BN_free(q_raw);
+            return false;
+        }
+        BN_ptr p_bn(p_raw, BN_free);
         BN_ptr q_bn(q_raw, BN_free);
 		BN_ptr result(BN_new(), BN_free);
 
@@ -971,8 +988,13 @@ namespace eccsi_sakke::sakke
         }
 
         // 7. Compare result with generator g
-        BIGNUM* g_raw = nullptr; BN_hex2bn(&g_raw, param.g.c_str());
-		BN_ptr g_bn(g_raw, BN_free);
+        BIGNUM* g_raw = nullptr;
+        if (!BN_hex2bn(&g_raw, param.g.c_str()))
+        {
+            LOG_ERROR("validateRSK: Failed to parse g from hex");
+            return false;
+        }
+        BN_ptr g_bn(g_raw, BN_free);
         int cmp = BN_cmp(result.get(), g_bn.get());
 
         if (cmp == 0) {
