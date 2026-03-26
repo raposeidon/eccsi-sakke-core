@@ -40,22 +40,24 @@ namespace eccsi_sakke::sakke
             return;
         }
 
-        BN_CTX *ctx = BN_CTX_new();
-        BIGNUM *p = BN_new(), *a = BN_new(), *b = BN_new();
-        if (EC_GROUP_get_curve_GFp(group_and_generator.first, p, a, b, ctx))
-        {
-            // 실제 값
-            char *p_str = BN_bn2hex(p);
+        using BN_CTX_ptr = std::unique_ptr<BN_CTX, decltype(&BN_CTX_free)>;
+        using BN_ptr = std::unique_ptr<BIGNUM, decltype(&BN_free)>;
 
-            BIGNUM *p_minus_x = BN_dup(p);
+        BN_CTX_ptr ctx(BN_CTX_new(), BN_CTX_free);
+        BN_ptr p(BN_new(), BN_free), a(BN_new(), BN_free), b(BN_new(), BN_free);
+        if (EC_GROUP_get_curve_GFp(group_and_generator.first, p.get(), a.get(), b.get(), ctx.get()))
+        {
+            char *p_str = BN_bn2hex(p.get());
+
+            BN_ptr p_minus_x(BN_dup(p.get()), BN_free);
             int minus_a = 0;
             bool a_is_negative = false;
 
             for (int x = 1; x <= 20; ++x)
             {
-                BN_copy(p_minus_x, p);
-                BN_sub_word(p_minus_x, x);
-                if (BN_cmp(a, p_minus_x) == 0)
+                BN_copy(p_minus_x.get(), p.get());
+                BN_sub_word(p_minus_x.get(), x);
+                if (BN_cmp(a.get(), p_minus_x.get()) == 0)
                 {
                     minus_a = x;
                     a_is_negative = true;
@@ -72,27 +74,23 @@ namespace eccsi_sakke::sakke
             }
             else
             {
-                char *a_dec = BN_bn2dec(a);
+                char *a_dec = BN_bn2dec(a.get());
                 a_str = a_dec;
                 OPENSSL_free(a_dec);
             }
 
-            std::string b_str = BN_is_zero(b) ? "0" : [](const BIGNUM *b)
+            std::string b_str = BN_is_zero(b.get()) ? "0" : [](const BIGNUM *b)
             {
                 char *b_dec = BN_bn2dec(b);
                 std::string res(b_dec);
                 OPENSSL_free(b_dec);
                 return res;
-            }(b);
+            }(b.get());
 
             LOG_DEBUG("SAKKE Curve (Set ", param_set, "): y^2 = x^3 + (", a_str, ")x + (", b_str, ") mod (", p_str, ")");
 
-            BN_free(p_minus_x);
+            OPENSSL_free(p_str);
         }
-        BN_free(p);
-        BN_free(a);
-        BN_free(b);
-        BN_CTX_free(ctx);
     }
 
     bool SAKKE::sakke_pointExponent(const BIGNUM *p, BIGNUM *result_x, BIGNUM *result_y,
