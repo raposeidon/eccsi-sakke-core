@@ -98,7 +98,8 @@ namespace eccsi_sakke::sakke
     bool SAKKE::sakke_pointExponent(const BIGNUM *p, BIGNUM *result_x, BIGNUM *result_y,
                                     const BIGNUM *point_x, const BIGNUM *point_y, const BIGNUM *n)
     {
-        BN_CTX *ctx = BN_CTX_new();
+        using BN_CTX_ptr = std::unique_ptr<BN_CTX, decltype(&BN_CTX_free)>;
+        BN_CTX_ptr ctx(BN_CTX_new(), BN_CTX_free);
         if (!ctx)
         {
             LOG_ERROR("BN_CTX_new failed!");
@@ -113,16 +114,14 @@ namespace eccsi_sakke::sakke
             int N = BN_num_bits(n) - 1;
             for (; N != 0; --N)
             {
-                sakke_pointSquare(p, result_x, result_y, result_x, result_y, ctx);
+                sakke_pointSquare(p, result_x, result_y, result_x, result_y, ctx.get());
                 if (BN_is_bit_set(n, N - 1))
                 {
-                    sakke_pointsMultiply(p, result_x, result_y, result_x, result_y, point_x, point_y, ctx);
+                    sakke_pointsMultiply(p, result_x, result_y, result_x, result_y, point_x, point_y, ctx.get());
                 }
             }
-            BN_CTX_free(ctx);
             return true;
         }
-        BN_CTX_free(ctx);
         return false;
     }
 
