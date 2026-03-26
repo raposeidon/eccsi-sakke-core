@@ -31,9 +31,26 @@ bool Logger::shouldPrint(LogLevel level)
     return static_cast<int>(level) <= static_cast<int>(minLogLevel.load(std::memory_order_relaxed));
 }
 
+static std::string sanitizeLogMessage(const std::string &msg)
+{
+    std::string out;
+    out.reserve(msg.size());
+    for (unsigned char c : msg)
+    {
+        if (c == '\n' || c == '\r' || c == '\t')
+            out += c;
+        else if (c < 0x20 || c == 0x7F)
+            out += '?';
+        else
+            out += static_cast<char>(c);
+    }
+    return out;
+}
+
 // This function is used to output logs to the console with color coding based on the log level
 ECCSISAKKE_API void defaultLogOutput(LogLevel level, const std::string &module, const std::string &msg)
 {
+    const std::string safeMsg = sanitizeLogMessage(msg);
 #ifdef _WIN32
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     WORD origAttr = 0;
@@ -50,30 +67,30 @@ ECCSISAKKE_API void defaultLogOutput(LogLevel level, const std::string &module, 
     case LogLevel::LOG_ERROR:
         color = FOREGROUND_RED | FOREGROUND_INTENSITY;
         SetConsoleTextAttribute(hConsole, color);
-        std::cerr << "[ERROR][" << module << "] " << msg << std::endl;
+        std::cerr << "[ERROR][" << module << "] " << safeMsg << std::endl;
         SetConsoleTextAttribute(hConsole, origAttr);
         return;
     case LogLevel::LOG_WARNING:
         color = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY; // Yellow
         SetConsoleTextAttribute(hConsole, color);
-        std::cout << "[WARN][" << module << "] " << msg << std::endl;
+        std::cout << "[WARN][" << module << "] " << safeMsg << std::endl;
         SetConsoleTextAttribute(hConsole, origAttr);
         return;
     case LogLevel::LOG_INFO:
         color = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
         SetConsoleTextAttribute(hConsole, color);
-        std::cout << "[INFO][" << module << "] " << msg << std::endl;
+        std::cout << "[INFO][" << module << "] " << safeMsg << std::endl;
         SetConsoleTextAttribute(hConsole, origAttr);
         return;
     case LogLevel::LOG_DEBUG:
         color = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY; // Cyan
         SetConsoleTextAttribute(hConsole, color);
-        std::cout << "[DEBUG][" << module << "] " << msg << std::endl;
+        std::cout << "[DEBUG][" << module << "] " << safeMsg << std::endl;
         SetConsoleTextAttribute(hConsole, origAttr);
         return;
     default:
         SetConsoleTextAttribute(hConsole, origAttr);
-        std::cout << "[MSG][" << module << "] " << msg << std::endl;
+        std::cout << "[MSG][" << module << "] " << safeMsg << std::endl;
         return;
     }
 #else
@@ -81,19 +98,19 @@ ECCSISAKKE_API void defaultLogOutput(LogLevel level, const std::string &module, 
     switch (level)
     {
     case LogLevel::ERROR:
-        std::cerr << "[ERROR][" << module << "] " << msg << std::endl;
+        std::cerr << "[ERROR][" << module << "] " << safeMsg << std::endl;
         break;
     case LogLevel::WARNING:
-        std::cout << "[WARN][" << module << "] " << msg << std::endl;
+        std::cout << "[WARN][" << module << "] " << safeMsg << std::endl;
         break;
     case LogLevel::INFO:
-        std::cout << "[INFO][" << module << "] " << msg << std::endl;
+        std::cout << "[INFO][" << module << "] " << safeMsg << std::endl;
         break;
     case LogLevel::DEBUG:
-        std::cout << "[DEBUG][" << module << "] " << msg << std::endl;
+        std::cout << "[DEBUG][" << module << "] " << safeMsg << std::endl;
         break;
     default:
-        std::cout << "[MSG][" << module << "] " << msg << std::endl;
+        std::cout << "[MSG][" << module << "] " << safeMsg << std::endl;
         break;
     }
 #endif
