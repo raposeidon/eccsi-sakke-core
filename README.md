@@ -23,7 +23,10 @@ This project uses OpenSSL for cryptographic functions and includes a demo progra
 
 ## 3. Tested Environment
 
-This project has been built and tested in the **Visual Studio 2022** environment.
+This project has been built and tested in the following environments:
+
+- **Windows**: Visual Studio 2022 (MSVC, x64)
+- **Android**: NDK r27 (Clang, arm64-v8a) — RFC test vectors verified on a physical device
 
 ---
 
@@ -36,8 +39,8 @@ The `CMakePresets.json` file provides presets for each platform and build type (
 - Android (NDK, arm64-v8a)
 - iOS (Xcode, arm64)
 
-> ⚠️ **Note:** Only the Windows environment has been directly built and tested.  
-> Presets for other environments are provided for reference only.
+> ⚠️ **Note:** Windows (MSVC) and Android (NDK arm64-v8a) have been built and tested.
+> Presets for other environments (MinGW, Linux, iOS) are provided for reference only.
 
 ---
 
@@ -49,6 +52,28 @@ Please replace `<preset-name>` with the appropriate preset for your environment 
 ```cmd
 cmake --preset <preset-name>
 ```
+
+---
+
+### Android (NDK)
+
+```bash
+# Configure (requires ANDROID_NDK_HOME environment variable)
+cmake --preset android-arm64-debug
+
+# Build
+cmake --build build/android/arm64/debug
+
+# Push and run on a connected device
+adb push build/android/arm64/debug/test_demo /data/local/tmp/
+adb shell chmod +x /data/local/tmp/test_demo
+adb shell /data/local/tmp/test_demo
+
+# Check output via logcat
+adb logcat -s "ECCSI-SAKKE/*"
+```
+
+Prebuilt OpenSSL static libraries for Android (arm64-v8a) should be placed in `external/openssl-android-arm64-v8a/`.
 
 ---
 
@@ -70,8 +95,9 @@ test_demo.exe
 ```
 
 You should see debug logs similar to the following:
-extractsakke mask :  9BD4EA1E801D37E62AD2FAB0D4F5BBF7
-extractsakke SSV result: 123456789abcdef0123456789abcdef0
+
+- extractsakke mask :  9BD4EA1E801D37E62AD2FAB0D4F5BBF7
+- extractsakke SSV result: 123456789abcdef0123456789abcdef0
 
 ---
 
