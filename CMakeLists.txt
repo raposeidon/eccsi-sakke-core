@@ -12,11 +12,21 @@ if(MSVC)
     add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/execution-charset:utf-8>")
 endif()
 
-# OpenSSL build: direct path (for bundled OpenSSL builds)
-set(OPENSSL_ROOT_DIR ${CMAKE_SOURCE_DIR}/external/openssl)
-set(OPENSSL_INCLUDE_DIR ${OPENSSL_ROOT_DIR}/include)
-set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR}/lib)
-set(OPENSSL_BIN_DIR ${OPENSSL_ROOT_DIR}/bin)
+# OpenSSL build: platform-specific path resolution
+set(OPENSSL_BASE_DIR ${CMAKE_SOURCE_DIR}/external/openssl)
+
+if(ANDROID)
+    set(OPENSSL_PLATFORM_DIR ${OPENSSL_BASE_DIR}-android-${ANDROID_ABI})
+elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(OPENSSL_PLATFORM_DIR ${OPENSSL_BASE_DIR}-ios-arm64)
+else()
+    set(OPENSSL_PLATFORM_DIR ${OPENSSL_BASE_DIR})
+endif()
+
+set(OPENSSL_ROOT_DIR ${OPENSSL_PLATFORM_DIR})
+set(OPENSSL_INCLUDE_DIR ${OPENSSL_PLATFORM_DIR}/include)
+set(OPENSSL_LIB_DIR ${OPENSSL_PLATFORM_DIR}/lib)
+set(OPENSSL_BIN_DIR ${OPENSSL_PLATFORM_DIR}/bin)
 
 message(STATUS "Using OpenSSL from: ${OPENSSL_ROOT_DIR}")
 
@@ -31,6 +41,33 @@ if(OpenSSL_FOUND)
     set(USE_SYSTEM_OPENSSL TRUE)
 endif()
 
+# Helper: link bundled OpenSSL to a target (avoids duplication)
+function(link_bundled_openssl target_name)
+    target_include_directories(${target_name} PUBLIC ${OPENSSL_INCLUDE_DIR})
+
+    if(WIN32)
+        target_link_libraries(${target_name}
+            ${OPENSSL_LIB_DIR}/libssl.lib
+            ${OPENSSL_LIB_DIR}/libcrypto.lib
+        )
+    elseif(EXISTS "${OPENSSL_LIB_DIR}/libssl.a")
+        target_link_libraries(${target_name}
+            ${OPENSSL_LIB_DIR}/libssl.a
+            ${OPENSSL_LIB_DIR}/libcrypto.a
+        )
+    else()
+        target_link_libraries(${target_name}
+            ${OPENSSL_LIB_DIR}/libssl.so
+            ${OPENSSL_LIB_DIR}/libcrypto.so
+        )
+    endif()
+
+    # Android: link log library for __android_log_print (logcat)
+    if(ANDROID)
+        target_link_libraries(${target_name} log)
+    endif()
+endfunction()
+
 # Static Library
 if(BUILD_STATIC)
     add_library(eccsisakke_static STATIC ${LIB_SRC})
@@ -42,24 +79,11 @@ if(BUILD_STATIC)
         target_compile_definitions(eccsisakke_static PRIVATE DEBUG)
     endif()
 
-    # OpenSSL for static
     if(USE_SYSTEM_OPENSSL)
         target_include_directories(eccsisakke_static PUBLIC ${OPENSSL_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIRS})
         target_link_libraries(eccsisakke_static OpenSSL::SSL OpenSSL::Crypto)
     else()
-        target_include_directories(eccsisakke_static PUBLIC ${OPENSSL_INCLUDE_DIR})
-
-        if(WIN32)
-            target_link_libraries(eccsisakke_static
-                ${OPENSSL_LIB_DIR}/libssl.lib
-                ${OPENSSL_LIB_DIR}/libcrypto.lib
-            )
-        else()
-            target_link_libraries(eccsisakke_static
-                ${OPENSSL_LIB_DIR}/libssl.so
-                ${OPENSSL_LIB_DIR}/libcrypto.so
-            )
-        endif()
+        link_bundled_openssl(eccsisakke_static)
     endif()
 endif()
 
@@ -74,24 +98,11 @@ if(BUILD_SHARED)
         target_compile_definitions(eccsisakke_shared PRIVATE DEBUG)
     endif()
 
-    # OpenSSL for shared
     if(USE_SYSTEM_OPENSSL)
         target_include_directories(eccsisakke_shared PUBLIC ${OPENSSL_INCLUDE_DIR} ${OPENSSL_INCLUDE_DIRS})
         target_link_libraries(eccsisakke_shared OpenSSL::SSL OpenSSL::Crypto)
     else()
-        target_include_directories(eccsisakke_shared PUBLIC ${OPENSSL_INCLUDE_DIR})
-
-        if(WIN32)
-            target_link_libraries(eccsisakke_shared
-                ${OPENSSL_LIB_DIR}/libssl.lib
-                ${OPENSSL_LIB_DIR}/libcrypto.lib
-            )
-        else()
-            target_link_libraries(eccsisakke_shared
-                ${OPENSSL_LIB_DIR}/libssl.so
-                ${OPENSSL_LIB_DIR}/libcrypto.so
-            )
-        endif()
+        link_bundled_openssl(eccsisakke_shared)
     endif()
 endif()
 
