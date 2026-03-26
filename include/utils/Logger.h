@@ -9,6 +9,8 @@
 #include <sstream>
 #include <functional>
 #include <iostream>
+#include <atomic>
+#include <shared_mutex>
 
 namespace eccsi_sakke::utils {
 
@@ -89,13 +91,16 @@ public:
     static std::string log(LogLevel level, const std::string &module, const std::string &file, int line, Args &&...args)
     {
         if (!shouldPrint(level))
-            return ""; // 레벨이 낮으면 출력하지 않음
+            return "";
         std::ostringstream oss;
         oss << "(" << shortFileName(file) << ":" << line << ") ";
         (oss << ... << args);
         std::string msg = oss.str();
-        if (outputFunc)
-            outputFunc(level, module, msg);
+        {
+            std::shared_lock<std::shared_mutex> lock(outputMutex());
+            if (outputFunc)
+                outputFunc(level, module, msg);
+        }
         return msg;
     }
 
@@ -131,10 +136,16 @@ public:
     }
 
 private:
-    /// Current minimum log level
-    static LogLevel minLogLevel;
-    /// Active log output function
+    /// Current minimum log level (atomic for thread safety)
+    static std::atomic<LogLevel> minLogLevel;
+    /// Active log output function (guarded by outputMutex)
     static OutputFunc outputFunc;
+    /// Mutex protecting outputFunc reads/writes
+    static std::shared_mutex &outputMutex()
+    {
+        static std::shared_mutex mtx;
+        return mtx;
+    }
 
     /**
      * @brief Extracts the short filename (no path) from a full file path.

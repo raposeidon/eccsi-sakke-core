@@ -15,19 +15,20 @@ namespace eccsi_sakke::utils {
 
 Logger::OutputFunc Logger::outputFunc = nullptr;
 
-LogLevel Logger::minLogLevel = LogLevel::LOG_DEBUG;
+std::atomic<LogLevel> Logger::minLogLevel{LogLevel::LOG_DEBUG};
 
 void Logger::setOutput(OutputFunc func)
 {
+    std::unique_lock<std::shared_mutex> lock(outputMutex());
     outputFunc = func;
 }
 
-void Logger::setLevel(LogLevel minLevel) { minLogLevel = minLevel; }
-LogLevel Logger::getLevel() { return minLogLevel; }
+void Logger::setLevel(LogLevel minLevel) { minLogLevel.store(minLevel, std::memory_order_relaxed); }
+LogLevel Logger::getLevel() { return minLogLevel.load(std::memory_order_relaxed); }
 
 bool Logger::shouldPrint(LogLevel level)
 {
-    return static_cast<int>(level) <= static_cast<int>(minLogLevel);
+    return static_cast<int>(level) <= static_cast<int>(minLogLevel.load(std::memory_order_relaxed));
 }
 
 // This function is used to output logs to the console with color coding based on the log level
