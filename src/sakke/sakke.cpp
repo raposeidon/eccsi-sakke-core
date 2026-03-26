@@ -745,13 +745,12 @@ namespace eccsi_sakke::sakke
         // 3. Compute the bilinear pairing: w := <R_(b,S), K_(b,S)>
         //    In SAKKE, due to bilinearity, this is mathematically equivalent to w = g^r.
         //    The pairing result is returned as a BIGNUM (raw_w).
-        BIGNUM *raw_w = BN_new();
-        if (!sakke_computeTLPairing(raw_w, R.get(), rsk_point.get(), group, p.get(), q.get(), ctx.get()))
+        BN_ptr w(BN_new(), BN_free);
+        if (!sakke_computeTLPairing(w.get(), R.get(), rsk_point.get(), group, p.get(), q.get(), ctx.get()))
         {
             LOG_DEBUG("extractsakke computeTLPairing fail.");
             return false;
         }
-        BN_ptr w(raw_w, BN_free);
 
         // 4. Convert the pairing result w into a byte array for further use (e.g., as mask)
         std::vector<uint8_t> w_bytes(BN_num_bytes(w.get()));
