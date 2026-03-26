@@ -37,8 +37,11 @@ ECCSISAKKE_API void defaultLogOutput(LogLevel level, const std::string &module, 
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     WORD origAttr = 0;
     CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(hConsole, &csbi);
-    origAttr = csbi.wAttributes;
+    if (!GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+        origAttr = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    } else {
+        origAttr = csbi.wAttributes;
+    }
 
     WORD color = origAttr;
     switch (level)
