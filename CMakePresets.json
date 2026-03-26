@@ -67,8 +67,12 @@
     {
       "name": "base-android-arm64",
       "generator": "Ninja",
-      "toolchainFile": "$ENV{ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake",
-      "hidden": true
+      "toolchainFile": "$env{ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake",
+      "hidden": true,
+      "cacheVariables": {
+        "BUILD_SHARED": "OFF",
+        "BUILD_STATIC": "ON"
+      }
     },
     {
       "name": "android-arm64-debug",

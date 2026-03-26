@@ -9,6 +9,8 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#elif defined(__ANDROID__)
+#include <android/log.h>
 #endif
 
 namespace eccsi_sakke::utils {
@@ -93,20 +95,41 @@ ECCSISAKKE_API void defaultLogOutput(LogLevel level, const std::string &module, 
         std::cout << "[MSG][" << module << "] " << safeMsg << std::endl;
         return;
     }
-#else
-    // Non-Windows platforms use standard output without color coding
+#elif defined(__ANDROID__)
+    // Android: output to logcat via __android_log_print
+    const std::string tag = "ECCSI-SAKKE/" + module;
     switch (level)
     {
-    case LogLevel::ERROR:
+    case LogLevel::LOG_ERROR:
+        __android_log_print(ANDROID_LOG_ERROR, tag.c_str(), "%s", safeMsg.c_str());
+        break;
+    case LogLevel::LOG_WARNING:
+        __android_log_print(ANDROID_LOG_WARN, tag.c_str(), "%s", safeMsg.c_str());
+        break;
+    case LogLevel::LOG_INFO:
+        __android_log_print(ANDROID_LOG_INFO, tag.c_str(), "%s", safeMsg.c_str());
+        break;
+    case LogLevel::LOG_DEBUG:
+        __android_log_print(ANDROID_LOG_DEBUG, tag.c_str(), "%s", safeMsg.c_str());
+        break;
+    default:
+        __android_log_print(ANDROID_LOG_VERBOSE, tag.c_str(), "%s", safeMsg.c_str());
+        break;
+    }
+#else
+    // Other platforms: standard output without color coding
+    switch (level)
+    {
+    case LogLevel::LOG_ERROR:
         std::cerr << "[ERROR][" << module << "] " << safeMsg << std::endl;
         break;
-    case LogLevel::WARNING:
+    case LogLevel::LOG_WARNING:
         std::cout << "[WARN][" << module << "] " << safeMsg << std::endl;
         break;
-    case LogLevel::INFO:
+    case LogLevel::LOG_INFO:
         std::cout << "[INFO][" << module << "] " << safeMsg << std::endl;
         break;
-    case LogLevel::DEBUG:
+    case LogLevel::LOG_DEBUG:
         std::cout << "[DEBUG][" << module << "] " << safeMsg << std::endl;
         break;
     default:
