@@ -764,11 +764,11 @@ namespace eccsi_sakke::sakke
         /********************************************************************
          Step 3) Compute SSV = H XOR HashToIntegerRange( w, 2^n, Hash );
         *********************************************************************/
-        BIGNUM *twoToN = BN_new();
-        BN_set_bit(twoToN, param.n_bits);
+        BN_ptr twoToN(BN_new(), BN_free);
+        BN_set_bit(twoToN.get(), param.n_bits);
 
         BIGNUM *raw_mask = BN_new();
-        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_mask, w_bytes.data(), w_bytes.size(), twoToN, SHAHash::SHA256))
+        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_mask, w_bytes.data(), w_bytes.size(), twoToN.get(), SHAHash::SHA256))
         {
             LOG_ERROR("extractsakke Failed to generate b");
             return false;
