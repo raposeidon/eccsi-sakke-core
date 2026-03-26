@@ -52,9 +52,9 @@ public:
     OctetString(const OctetString &) = default;
 
     /**
-     * @brief Copy assignment.
+     * @brief Copy assignment. Securely wipes old data before overwriting.
      */
-    OctetString &operator=(const OctetString &) = default;
+    OctetString &operator=(const OctetString &);
 
     /**
      * @brief Move constructor.

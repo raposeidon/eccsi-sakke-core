@@ -67,13 +67,30 @@ OctetString::OctetString(OctetString &&other) noexcept
     : data(std::move(other.data)) {}
 
 /**
- * @brief Move assignment.
+ * @brief Copy assignment. Securely wipes old data before overwriting.
+ * @param other The OctetString to copy from.
+ */
+OctetString &OctetString::operator=(const OctetString &other)
+{
+    if (this != &other)
+    {
+        if (!data.empty())
+            secureClear(data.data(), data.size());
+        data = other.data;
+    }
+    return *this;
+}
+
+/**
+ * @brief Move assignment. Securely wipes old data before overwriting.
  * @param other The OctetString to move from.
  */
 OctetString &OctetString::operator=(OctetString &&other) noexcept
 {
     if (this != &other)
     {
+        if (!data.empty())
+            secureClear(data.data(), data.size());
         data = std::move(other.data);
     }
     return *this;
