@@ -297,7 +297,7 @@ bool ECCSI::verify(const eccsi_sakke::utils::OctetString &message,
     // (Step 0) Check signature length (RFC 6507: r(32) + s(32) + PVT(65))
     if (signature.size() < (32 + 32 + 65))
     {
-        LOG_ERROR("Invalid signature length: %zu", signature.size());
+        LOG_ERROR("Invalid signature length: ", signature.size());
         return false;
     }
 
