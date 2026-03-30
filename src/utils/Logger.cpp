@@ -6,6 +6,7 @@
 // This file implements the Logger class for logging messages with different severity levels.
 
 #include "utils/Logger.h"
+#include <mutex>
 
 #ifdef _WIN32
 #include <windows.h>
