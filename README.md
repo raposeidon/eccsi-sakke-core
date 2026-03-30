@@ -26,6 +26,7 @@ This project uses OpenSSL for cryptographic functions and includes a demo progra
 This project has been built and tested in the following environments:
 
 - **Windows**: Visual Studio 2022 (MSVC, x64)
+- **Windows**: MSYS2 MinGW-w64 (GCC 15, x64)
 - **Android**: NDK r27 (Clang, arm64-v8a) — RFC test vectors verified on a physical device
 
 ---
@@ -39,8 +40,8 @@ The `CMakePresets.json` file provides presets for each platform and build type (
 - Android (NDK, arm64-v8a)
 - iOS (Xcode, arm64)
 
-> ⚠️ **Note:** Windows (MSVC) and Android (NDK arm64-v8a) have been built and tested.
-> Presets for other environments (MinGW, Linux, iOS) are provided for reference only.
+> ⚠️ **Note:** Windows (MSVC, MinGW) and Android (NDK arm64-v8a) have been built and tested.
+> Presets for other environments (Linux, iOS) are provided for reference only.
 
 ---
 
