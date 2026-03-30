@@ -6,6 +6,7 @@
 #pragma once
 #include "eccsisakke_export.h"
 #include <vector>
+#include <cstdint>
 
 namespace eccsi_sakke::utils {
 
