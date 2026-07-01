@@ -416,6 +416,8 @@ namespace eccsi_sakke::sakke
         *********************************************************************/
         if (ssv.size() == 0)
             ssv = OctetString(utils::generateRandomR(param.n_bits / 8));
+        else if (ssv.size() != static_cast<size_t>(param.n_bits / 8))
+            throw std::runtime_error("Caller-supplied SSV has invalid size");
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         LOG_DEBUG("generateSakke ssv: ", ssv.toHexString());
