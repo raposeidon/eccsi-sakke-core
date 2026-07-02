@@ -1,3 +1,4 @@
+eccsi-sakke-core
 Copyright 2025 The raposeidon Project Authors
 (https://github.com/raposeidon/eccsi-sakke-core)
 
@@ -5,16 +6,22 @@ Copyright 2025 The raposeidon Project Authors
 라이선스 사본은 아래에서 확인하실 수 있습니다:
 http://www.apache.org/licenses/LICENSE-2.0
 
-이 소프트웨어에는 다음과 같은 외부 자료 및 구현 아이디어가 반영되어 있습니다:
-- RFC 6507, RFC 6508, RFC 6509 (IETF 표준)
-- ECCSI-SAKKE 프로젝트(https://github.com/jim-b/ECCSI-SAKKE)의 sakke/tlpairing 로직
+------------------------------------------------------------------------
+본 소프트웨어는 다음 저작물로부터 파생되었습니다:
 
-본 프로젝트는 ECCSI-SAKKE 저장소의 sakke/tlpairing 로직을 C++로 포팅하여 구현하였습니다.
-원본 구현의 알고리즘 및 로직 구조를 참고 및 변환하였으며, Apache License 2.0의 조건을 준수합니다.
+  ECCSI/SAKKE Crypto Library
+  Copyright 2015 Jim Buller
+  https://github.com/jim-b/ECCSI-SAKKE
+  Apache License, Version 2.0.
 
-원본 소스코드의 저작권 및 라이선스는 ECCSI-SAKKE 저장소(https://github.com/jim-b/ECCSI-SAKKE)에 있습니다.
-자세한 사항은 본 저장소의 LICENSE 파일 및 제3자 라이선스 고지 파일(예: THIRD_PARTY_NOTICES 등)을 참고하십시오.
+eccsi-sakke-core 는 위 ECCSI-SAKKE 라이브러리(원본은 C, OpenSSL 기반)를
+C++ 로 포팅·재구조화한 것입니다. ECCSI(RFC 6507) 및 SAKKE(RFC 6508,
+RFC 6509) 연산은 원본의 구조를 따릅니다.
 
-별도의 서면 동의 또는 관련 법률에 의해 요구되지 않는 한, 본 소프트웨어는 "있는 그대로" 제공되며,
-명시적이거나 묵시적인 어떠한 보증도 하지 않습니다.
+기반 알고리즘은 IETF 표준(RFC 6507/6508/6509)이며, 구현에 사용된 표준적인
+수학 기법은 위 저작권의 보호 대상이 아닙니다.
+------------------------------------------------------------------------
+
+별도의 서면 동의 또는 관련 법률에 의해 요구되지 않는 한, 본 소프트웨어는
+"있는 그대로" 제공되며 명시적이거나 묵시적인 어떠한 보증도 하지 않습니다.
 자세한 내용은 라이선스를 참고하십시오.
