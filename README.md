@@ -9,8 +9,8 @@ eccsi-sakke-core is a cross-platform C++ project designed for easy building on W
 eccsi-sakke-core is a C++ project implementing the RFC 6507 and 6508 standards, providing easy cross-platform builds and execution using CMake presets.  
 This project uses OpenSSL for cryptographic functions and includes a demo program for testing with RFC vectors.
 
-> **Note:** This project re-implements the sakke/tlpairing logic from the ECCSI-SAKKE repository (https://github.com/jim-b/ECCSI-SAKKE) in C++.  
-> The original algorithms and logic structure were referenced and adapted in compliance with the Apache License 2.0.
+> **Note:** This project is a C++ port and restructuring of the ECCSI-SAKKE library (https://github.com/jim-b/ECCSI-SAKKE, Copyright 2015 Jim Buller).  
+> The original work was referenced and adapted in compliance with the Apache License 2.0.
 
 ---
 
@@ -107,4 +107,4 @@ You should see debug logs similar to the following:
 This project is provided under the **Apache License 2.0**.  
 Please refer to the NOTICE, LICENSE, and THIRD_PARTY_NOTICES files for more information.
 
-This project references and adapts implementation logic from the ECCSI-SAKKE repository (https://github.com/jim-b/ECCSI-SAKKE) in compliance with the Apache License 2.0.
+This project is a C++ port derived from the ECCSI-SAKKE library (https://github.com/jim-b/ECCSI-SAKKE, Copyright 2015 Jim Buller), reused and adapted in compliance with the Apache License 2.0.
