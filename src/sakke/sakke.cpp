@@ -104,23 +104,67 @@ namespace eccsi_sakke::sakke
             return false;
         }
 
-        if (!BN_is_zero(n))
+        if (BN_is_zero(n))
         {
-            BN_copy(result_x, point_x);
-            BN_copy(result_y, point_y);
-
-            int N = BN_num_bits(n) - 1;
-            for (; N != 0; --N)
-            {
-                sakke_pointSquare(p, result_x, result_y, result_x, result_y, ctx.get());
-                if (BN_is_bit_set(n, N - 1))
-                {
-                    sakke_pointsMultiply(p, result_x, result_y, result_x, result_y, point_x, point_y, ctx.get());
-                }
-            }
-            return true;
+            return false;
         }
-        return false;
+
+        // Constant-time square-and-multiply-always. The exponent is secret (SAKKE r), so
+        // instead of branching on each exponent bit the loop runs a fixed number of
+        // iterations (bit length of p; r < q < p), always multiplies, and keeps either the
+        // squared or the multiplied value with a branchless byte mask. Results are unchanged.
+        const int nbits = BN_num_bits(n) > BN_num_bits(p) ? BN_num_bits(n) : BN_num_bits(p);
+        const int fb = (nbits + 7) / 8;
+        std::vector<unsigned char> cur_x(fb), cur_y(fb), mul_x(fb), mul_y(fb);
+
+        BN_CTX_start(ctx.get());
+        BIGNUM *prod_x = BN_CTX_get(ctx.get());
+        BIGNUM *prod_y = BN_CTX_get(ctx.get());
+        if (!prod_y)
+        {
+            LOG_ERROR("BN_CTX_get failed (out of memory)");
+            BN_CTX_end(ctx.get());
+            return false;
+        }
+        BN_set_flags(result_x, BN_FLG_CONSTTIME);
+        BN_set_flags(result_y, BN_FLG_CONSTTIME);
+        BN_set_flags(prod_x, BN_FLG_CONSTTIME);
+        BN_set_flags(prod_y, BN_FLG_CONSTTIME);
+
+        // Start from the identity (1, 0) of the F_p^2 multiplication.
+        BN_one(result_x);
+        BN_zero(result_y);
+
+        bool ok = true;
+        for (int i = nbits - 1; i >= 0; --i)
+        {
+            BN_CTX_start(ctx.get());   // releases the helpers' temporaries every iteration
+            sakke_pointSquare(p, result_x, result_y, result_x, result_y, ctx.get());
+            sakke_pointsMultiply(p, prod_x, prod_y, result_x, result_y, point_x, point_y, ctx.get());
+            BN_CTX_end(ctx.get());
+
+            const unsigned char mask = static_cast<unsigned char>(0u - static_cast<unsigned>(BN_is_bit_set(n, i) != 0));
+            ok = ok && BN_bn2binpad(result_x, cur_x.data(), fb) == fb && BN_bn2binpad(result_y, cur_y.data(), fb) == fb &&
+                 BN_bn2binpad(prod_x, mul_x.data(), fb) == fb && BN_bn2binpad(prod_y, mul_y.data(), fb) == fb;
+            for (int b = 0; b < fb; ++b)
+            {
+                cur_x[b] = static_cast<unsigned char>((cur_x[b] & ~mask) | (mul_x[b] & mask));
+                cur_y[b] = static_cast<unsigned char>((cur_y[b] & ~mask) | (mul_y[b] & mask));
+            }
+            ok = ok && BN_bin2bn(cur_x.data(), fb, result_x) && BN_bin2bn(cur_y.data(), fb, result_y);
+        }
+        BN_CTX_end(ctx.get());
+
+        OPENSSL_cleanse(cur_x.data(), cur_x.size());
+        OPENSSL_cleanse(cur_y.data(), cur_y.size());
+        OPENSSL_cleanse(mul_x.data(), mul_x.size());
+        OPENSSL_cleanse(mul_y.data(), mul_y.size());
+
+        if (!ok)
+        {
+            LOG_ERROR("sakke_pointExponent: fixed-width conversion failed");
+        }
+        return ok;
     }
 
     // SAKKE pairing-like computation in C++
@@ -242,6 +286,11 @@ namespace eccsi_sakke::sakke
         BIGNUM *tmp_Bx1 = BN_CTX_get(ctx);
         BIGNUM *tmp_Bx2 = BN_CTX_get(ctx);
         BIGNUM *two = BN_CTX_get(ctx);
+        // Constant-time reduction path for operands that may carry secret values (g^r).
+        BN_set_flags(tmp_Ax1, BN_FLG_CONSTTIME);
+        BN_set_flags(tmp_Ax2, BN_FLG_CONSTTIME);
+        BN_set_flags(tmp_Bx1, BN_FLG_CONSTTIME);
+        BN_set_flags(tmp_Bx2, BN_FLG_CONSTTIME);
 
         BN_copy(tmp_Ax1, point_x);
         BN_copy(tmp_Ax2, point_y);
@@ -264,6 +313,10 @@ namespace eccsi_sakke::sakke
         BIGNUM *res_x = BN_CTX_get(ctx);
         BIGNUM *res_y = BN_CTX_get(ctx);
         BIGNUM *tmp = BN_CTX_get(ctx);
+        // Constant-time reduction path for operands that may carry secret values (g^r).
+        BN_set_flags(res_x, BN_FLG_CONSTTIME);
+        BN_set_flags(res_y, BN_FLG_CONSTTIME);
+        BN_set_flags(tmp, BN_FLG_CONSTTIME);
 
         BN_mul(res_x, point_1_x, point_2_x, ctx);
         BN_mul(tmp, point_1_y, point_2_y, ctx);
@@ -530,6 +583,8 @@ namespace eccsi_sakke::sakke
         }
 
         // Compute the modular inverse: (g^r mod p)^(-1)
+        // g^r derives from the secret r, so invert on the constant-time path (BN_mod_inverse_no_branch).
+        BN_set_flags(g_pow_r.get(), BN_FLG_CONSTTIME);
         if (!BN_mod_inverse(g_pow_r.get(), g_pow_r.get(), p.get(), ctx.get()))
         {
             LOG_ERROR("generateSakke BN_mod_inverse failed!");

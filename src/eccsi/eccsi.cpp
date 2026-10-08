@@ -13,7 +13,6 @@
 #include "eccsi/eccsi.h"
 #include "utils/LoggerMacro.h"
 #include <openssl/evp.h>
-#include <openssl/rand.h>
 #include <cstring>
 
 namespace eccsi_sakke::eccsi {
@@ -150,35 +149,26 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
     }
     else
     {
-        const int order_bits  = BN_num_bits(q.get());
-        const int order_bytes = (order_bits + 7) / 8;
-        std::vector<unsigned char> buf(static_cast<size_t>(order_bytes));
-
+        // RFC 6507 §5.2.1 Step 1: choose a random non-zero j in [1, q-1].
+        // BN_priv_rand_range draws a uniform value in [0, q) via rejection sampling (no
+        // modulo bias, unlike RAND_bytes + BN_mod) on the private-RNG path meant for
+        // secret values. Only the j == 0 draw is retried (probability ~1/q).
         int ok = 1;
         do
         {
-            if (RAND_bytes(buf.data(), order_bytes) != 1)
+            if (!BN_priv_rand_range(j.get(), q.get()))
             {
-                LOG_ERROR("RAND_bytes failed when generating j");
-                return false;
-            }
-
-            if (!BN_bin2bn(buf.data(), order_bytes, j.get()))
-            {
-                LOG_ERROR("BN_bin2bn failed when generating j");
-                return false;
-            }
-
-            // j = j mod q
-            if (!BN_mod(j.get(), j.get(), q.get(), ctx.get()))
-            {
-                LOG_ERROR("BN_mod failed when reducing j modulo q");
+                LOG_ERROR("BN_priv_rand_range failed when generating j");
                 return false;
             }
 
             ok = !BN_is_zero(j.get());
         } while (!ok);
     }
+
+    // Secret nonce j: take the constant-time paths in the [j]G scalar multiplication
+    // and the later BN_mod_mul for s (side-channel hardening; results are unchanged).
+    BN_set_flags(j.get(), BN_FLG_CONSTTIME);
 
     // (Step 2) Compute J = [j]G and set r = Jx
     EC_POINT_ptr J(EC_POINT_new(getGroup()), EC_POINT_free);
@@ -233,6 +223,7 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
         LOG_ERROR("Failed to convert to BIGNUM for HE, r, or SSK");
         return false;
     }
+    BN_set_flags(ssk_bn.get(), BN_FLG_CONSTTIME);   // secret signing key: r*SSK mod q in constant time
     BN_ptr r_mul_ssk(BN_new(), BN_free);
     BN_ptr denom(BN_new(), BN_free);
     if (!r_mul_ssk || !denom)
@@ -255,6 +246,9 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
         LOG_ERROR("Denominator is zero: cannot sign (HE + r*SSK == 0)");
         return false;
     }
+
+    // Secret (HE + r*SSK): compute the inverse on the constant-time path (BN_mod_inverse_no_branch)
+    BN_set_flags(denom.get(), BN_FLG_CONSTTIME);
 
     // (Step 6) Compute s = ((HE + r*SSK)^-1 * j) mod q
     BN_ptr denom_inv(BN_mod_inverse(nullptr, denom.get(), q.get(), ctx.get()), BN_free);
