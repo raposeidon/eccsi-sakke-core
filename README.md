@@ -102,7 +102,16 @@ You should see debug logs similar to the following:
 
 ---
 
-## 8. License
+## 8. Performance
+
+This project focuses on RFC 6507/6508 conformance and a readable code structure, and its algorithms are not optimized for performance.
+In particular, SAKKE encapsulation (SED generation) and SSV extraction rely on pairing computations and elliptic-curve point multiplications, so they may be too slow for mobile devices or for environments that process many messages.
+
+Performance optimization is intentionally left to each user. Optimize the implementation to fit your platform and requirements, and after any change, run the demo program (`test_demo`) to confirm that the RFC test vector results are unchanged.
+
+---
+
+## 9. License
 
 This project is provided under the **Apache License 2.0**.  
 Please refer to the NOTICE, LICENSE, and THIRD_PARTY_NOTICES files for more information.
