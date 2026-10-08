@@ -492,7 +492,7 @@ namespace eccsi_sakke::sakke
             LOG_ERROR("generateSakke Failed to generate r ");
             return false;
         }
-        BN_ptr r(raw_r, BN_free);
+        BN_ptr r(raw_r, BN_clear_free);
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *r_hex = BN_bn2hex(r.get());
@@ -520,7 +520,7 @@ namespace eccsi_sakke::sakke
         }
 
         // 1. rb = r * b
-        BN_ptr rb(BN_new(), BN_free);
+        BN_ptr rb(BN_new(), BN_clear_free);
         BN_ptr b(BN_new(), BN_free);
         BN_bin2bn(recipientId.bytes().data(), recipientId.bytes().size(), b.get());
         if (!BN_mul(rb.get(), r.get(), b.get(), ctx.get()))
@@ -563,8 +563,8 @@ namespace eccsi_sakke::sakke
         *********************************************************************/
 
         // 4.a) Compute g^r
-        BN_ptr g_pow_r(BN_new(), BN_free);
-        BN_ptr result_x_bn(BN_new(), BN_free), result_y_bn(BN_new(), BN_free);
+        BN_ptr g_pow_r(BN_new(), BN_clear_free);
+        BN_ptr result_x_bn(BN_new(), BN_clear_free), result_y_bn(BN_new(), BN_clear_free);
 
         // Calculate the pairing-based exponentiation: result = g^r
         // (result_x_bn and result_y_bn will hold the x and y coordinates of g^r)
@@ -633,7 +633,7 @@ namespace eccsi_sakke::sakke
             LOG_ERROR("generateSakke Failed to generate mask");
             return false;
         }
-        BN_ptr mask(raw_mask, BN_free);
+        BN_ptr mask(raw_mask, BN_clear_free);
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *mask_hex = BN_bn2hex(mask.get());
@@ -810,7 +810,7 @@ namespace eccsi_sakke::sakke
         // 3. Compute the bilinear pairing: w := <R_(b,S), K_(b,S)>
         //    In SAKKE, due to bilinearity, this is mathematically equivalent to w = g^r.
         //    The pairing result is returned as a BIGNUM (raw_w).
-        BN_ptr w(BN_new(), BN_free);
+        BN_ptr w(BN_new(), BN_clear_free);
         if (!sakke_computeTLPairing(w.get(), R.get(), rsk_point.get(), group, p.get(), q.get(), ctx.get()))
         {
             LOG_DEBUG("extractsakke computeTLPairing fail.");
@@ -831,7 +831,7 @@ namespace eccsi_sakke::sakke
         BN_ptr twoToN(BN_new(), BN_free);
         BN_set_bit(twoToN.get(), param.n_bits);
 
-        BN_ptr mask(BN_new(), BN_free);
+        BN_ptr mask(BN_new(), BN_clear_free);
         if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(mask.get(), w_bytes.data(), w_bytes.size(), twoToN.get(), SHAHash::SHA256))
         {
             LOG_ERROR("extractsakke Failed to generate b");
@@ -874,7 +874,7 @@ namespace eccsi_sakke::sakke
         LOG_DEBUG("extractsakke ssv_with_id: ", ssv_with_id.toHexString());
 #endif
 
-        BN_ptr r(BN_new(), BN_free);
+        BN_ptr r(BN_new(), BN_clear_free);
         if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(r.get(), ssv_with_id.bytes().data(), ssv_with_id.bytes().size(), q.get(), SHAHash::SHA256))
         {
             LOG_ERROR("extractsakke Failed to generate b");

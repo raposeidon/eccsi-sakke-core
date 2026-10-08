@@ -129,7 +129,7 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
     }
 
     // (Step 1) Choose a random (ephemeral) non-zero value j in F_q
-    BN_ptr j(BN_new(), BN_free);
+    BN_ptr j(BN_new(), BN_clear_free);
 
     if (useTestVector) // useTestVector: test mode?
     {
@@ -217,15 +217,15 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
     // (Step 5) Compute denominator: denom = HE + r * SSK mod q
     BN_ptr he(toBignum(HE), BN_free);
     BN_ptr r_bn(BN_dup(Jx.get()), BN_free);
-    BN_ptr ssk_bn(toBignum(ssk), BN_free);
+    BN_ptr ssk_bn(toBignum(ssk), BN_clear_free);
     if (!he || !r_bn || !ssk_bn)
     {
         LOG_ERROR("Failed to convert to BIGNUM for HE, r, or SSK");
         return false;
     }
     BN_set_flags(ssk_bn.get(), BN_FLG_CONSTTIME);   // secret signing key: r*SSK mod q in constant time
-    BN_ptr r_mul_ssk(BN_new(), BN_free);
-    BN_ptr denom(BN_new(), BN_free);
+    BN_ptr r_mul_ssk(BN_new(), BN_clear_free);
+    BN_ptr denom(BN_new(), BN_clear_free);
     if (!r_mul_ssk || !denom)
     {
         LOG_ERROR("Failed to allocate r_mul_ssk or denom");
@@ -251,7 +251,7 @@ bool ECCSI::sign(const eccsi_sakke::utils::OctetString &message,
     BN_set_flags(denom.get(), BN_FLG_CONSTTIME);
 
     // (Step 6) Compute s = ((HE + r*SSK)^-1 * j) mod q
-    BN_ptr denom_inv(BN_mod_inverse(nullptr, denom.get(), q.get(), ctx.get()), BN_free);
+    BN_ptr denom_inv(BN_mod_inverse(nullptr, denom.get(), q.get(), ctx.get()), BN_clear_free);
     BN_ptr s(BN_new(), BN_free);
     if (!denom_inv || !s)
     {
@@ -481,7 +481,7 @@ bool ECCSI::validateSSK(
         return false;
     }
 
-    BN_ptr ssk_bn(BN_bin2bn(ssk.bytes().data(), ssk.size(), nullptr), BN_free);
+    BN_ptr ssk_bn(BN_bin2bn(ssk.bytes().data(), ssk.size(), nullptr), BN_clear_free);
     if (!ssk_bn)
     {
         LOG_ERROR("Failed to parse SSK as BIGNUM");
