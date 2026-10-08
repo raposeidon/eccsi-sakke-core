@@ -97,14 +97,16 @@ public:
     }
 
     /**
-     * @brief Parses RSK public key hex into EC_POINT.
-     * @param rskHex RSK public key in hex (uncompressed)
+     * @brief Parses the RSK (receiver secret key) hex into EC_POINT.
+     * @param rskHex RSK in hex (uncompressed)
      * @param group  Curve group
-     * @return ECPointPtr Smart pointer to EC_POINT
+     * @return ECPointPtr Smart pointer to EC_POINT, released with EC_POINT_clear_free
      * @throws Exception on failure (see fromHextoPoint)
      */
     static ECPointPtr fromRSK(const std::string& rskHex, const EC_GROUP* group) {
-        return fromHextoPoint(rskHex, group);
+        // RSK is secret: hand back a pointer whose deleter wipes the point. The deleter
+        // travels with the pointer, so callers that move-assign the result inherit it.
+        return ECPointPtr(fromHextoPoint(rskHex, group).release(), EC_POINT_clear_free);
     }
 };
 

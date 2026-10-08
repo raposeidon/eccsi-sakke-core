@@ -486,13 +486,12 @@ namespace eccsi_sakke::sakke
         LOG_DEBUG("generateSakke ssv|b: ", r_input.toHexString());
 #endif
 
-        BIGNUM *raw_r = BN_new();
-        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(raw_r, r_input.bytes().data(), r_input.bytes().size(), q.get(), SHAHash::SHA256))
+        BN_ptr r(BN_new(), BN_clear_free);
+        if (!r || !hashToIntegerRangeSHA.hashToIntegerRangeSHA(r.get(), r_input.bytes().data(), r_input.bytes().size(), q.get(), SHAHash::SHA256))
         {
             LOG_ERROR("generateSakke Failed to generate r ");
             return false;
         }
-        BN_ptr r(raw_r, BN_clear_free);
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *r_hex = BN_bn2hex(r.get());
@@ -625,15 +624,14 @@ namespace eccsi_sakke::sakke
         }
 
         // Generate the mask value: mask = HashToIntegerRange(g^r, 2^n, SHA-256)
-        BIGNUM *raw_mask = BN_new();
-        if (!hashToIntegerRangeSHA.hashToIntegerRangeSHA(
-                raw_mask, g_pow_r_bytes.data(), g_pow_r_bytes.size(),
+        BN_ptr mask(BN_new(), BN_clear_free);
+        if (!mask || !hashToIntegerRangeSHA.hashToIntegerRangeSHA(
+                mask.get(), g_pow_r_bytes.data(), g_pow_r_bytes.size(),
                 two_to_power_n_bn.get(), SHAHash::SHA256))
         {
             LOG_ERROR("generateSakke Failed to generate mask");
             return false;
         }
-        BN_ptr mask(raw_mask, BN_clear_free);
 
 #ifdef ECCSI_SAKKE_DEBUG_SECRETS
         char *mask_hex = BN_bn2hex(mask.get());
@@ -799,7 +797,7 @@ namespace eccsi_sakke::sakke
         }
 
         // 2. Restore the recipient's secret key (RSK, K_(b,S)) as an EC_POINT on the curve
-        EC_POINT_ptr rsk_point(nullptr, EC_POINT_free);
+        EC_POINT_ptr rsk_point(nullptr, EC_POINT_clear_free);
         try {
             rsk_point = utils::EcPointParser::fromRSK(rsk.toHexString(), group);
         } catch (const std::exception& e) {
@@ -980,7 +978,7 @@ namespace eccsi_sakke::sakke
 		BN_ptr a_bn(a_raw, BN_free);
 
         // 3. Restore RSK as EC_POINT
-        EC_POINT_ptr rsk_point(nullptr, EC_POINT_free);
+        EC_POINT_ptr rsk_point(nullptr, EC_POINT_clear_free);
         try {
             rsk_point = utils::EcPointParser::fromRSK(RSK.toHexString(), group);
         } catch (const std::exception& e) {
